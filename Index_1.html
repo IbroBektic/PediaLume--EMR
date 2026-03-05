@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PediaLume-EMR</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--primary:#1a6fff;--primary-dark:#0047cc;--accent:#00d4aa;--accent2:#ff6b35;--accent3:#a855f7;--bg:#f0f4ff;--sidebar-bg:#0b1a3d;--sidebar-text:#c8d8f8;--card:#fff;--border:#dde6f8;--text:#1a2340;--text-soft:#5a6a8a;--text-muted:#8a9abf;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--radius:14px;--radius-sm:8px;--shadow:0 4px 20px rgba(26,111,255,.08);--shadow-md:0 8px 32px rgba(26,111,255,.13);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{display:flex;position:fixed;inset:0;background:#f8fafc;z-index:9999;align-items:center;justify-content:center;flex-direction:column;}
+#auth-screen.hide{display:none;}
+.auth-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:44px 48px;width:420px;max-width:94vw;box-shadow:0 4px 24px rgba(0,0,0,.08);animation:authIn .3s ease;text-align:center;}
+@keyframes authIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.auth-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;}
+.auth-brand{font-size:24px;font-weight:900;background:linear-gradient(90deg,#1a6fff,#00d4aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.auth-tagline{font-size:14px;color:var(--text-soft);margin-bottom:30px;line-height:1.5;}
+.auth-tagline strong{color:var(--text);font-weight:700;}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:20px;}
+.btn-google:hover{border-color:#c7d2fe;background:#f5f7ff;box-shadow:0 2px 8px rgba(26,111,255,.12);}
+.auth-footer-text{font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:14px;}
+.auth-footer-links{font-size:12px;color:var(--text-muted);}
+.auth-footer-links a{color:var(--text-soft);font-weight:600;}
+.auth-footer-links a:hover{color:var(--primary);}
+/* error/status states */
+.auth-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.auth-desc{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:20px;}
+.auth-icon-wrap{width:56px;height:56px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;}
+.auth-icon-wrap.warning{background:#fffbeb;border-color:#fde68a;}
+.auth-icon-wrap.info{background:#eff6ff;border-color:#bfdbfe;}
+.auth-icon-wrap.loading{background:#f0fdf4;border-color:#bbf7d0;}
+.auth-email-pill{display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:50px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--text-soft);margin-bottom:16px;}
+.auth-spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top:3px solid var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── APP LAYOUT ── */
+#app{display:none;width:100%;}
+#app.show{display:flex;}
+#sidebar{width:264px;min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:width .3s;overflow:hidden;}
+.sidebar-logo{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.07);}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-text-block .brand{font-size:19px;font-weight:900;background:linear-gradient(90deg,#4da6ff,#00d4aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;}
+.logo-text-block .sub{font-size:10px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:1px;}
+.nav-section-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.22);padding:14px 18px 5px;font-weight:800;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 18px;color:var(--sidebar-text);cursor:pointer;transition:all .2s;position:relative;font-size:13.5px;font-weight:600;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(26,111,255,.18);color:#fff;}
+.nav-item.active::before{content:'';position:absolute;left:0;top:5px;bottom:5px;width:3px;background:linear-gradient(180deg,#4da6ff,#00d4aa);border-radius:0 3px 3px 0;}
+.nav-item.hidden{display:none;}
+.nav-icon{font-size:17px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--accent2);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);margin-top:auto;}
+.user-card{display:flex;align-items:center;gap:10px;}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,#1a6fff,#00d4aa);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0;}
+.user-info .uname{color:#fff;font-size:13px;font-weight:700;}
+.user-info .urole{color:var(--sidebar-text);font-size:11px;}
+.role-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:rgba(26,111,255,.25);color:#7db8ff;margin-top:3px;}
+
+#main{margin-left:264px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+#topbar{height:64px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 26px;gap:14px;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(26,111,255,.07);}
+.topbar-title{font-size:17px;font-weight:800;color:var(--text);flex:1;}
+.search-bar{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:50px;padding:8px 16px;gap:8px;width:280px;transition:border-color .2s;}
+.search-bar:focus-within{border-color:var(--primary);}
+.search-bar input{border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:13px;color:var(--text);outline:none;width:100%;}
+.topbar-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;transition:all .2s;}
+.topbar-btn:hover{border-color:var(--primary);background:var(--bg);}
+.notif-dot{width:8px;height:8px;background:var(--accent2);border-radius:50%;position:absolute;top:6px;right:6px;border:2px solid #fff;}
+.drive-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;background:#d1fae5;color:#065f46;}
+.drive-chip.offline{background:#fee2e2;color:#991b1b;}
+.ai-chip{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1a6fff1a,#00d4aa1a);border:1.5px solid #1a6fff44;padding:6px 14px;border-radius:50px;font-size:12px;font-weight:700;color:var(--primary);cursor:pointer;}
+.ai-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+#content{flex:1;padding:26px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;}
+.fade-in{animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS / STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:18px;border:1.5px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.blue::before{background:linear-gradient(90deg,#1a6fff,#4d8fff);}
+.stat-card.green::before{background:linear-gradient(90deg,#10b981,#34d399);}
+.stat-card.orange::before{background:linear-gradient(90deg,#ff6b35,#fbbf24);}
+.stat-card.purple::before{background:linear-gradient(90deg,#a855f7,#ec4899);}
+.stat-card.teal::before{background:linear-gradient(90deg,#00d4aa,#06b6d4);}
+.stat-icon{font-size:26px;margin-bottom:7px;}
+.stat-value{font-size:30px;font-weight:900;color:var(--text);line-height:1;}
+.stat-label{font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+.stat-delta{font-size:12px;font-weight:700;margin-top:7px;display:flex;align-items:center;gap:4px;}
+.stat-delta.up{color:var(--success);}
+.stat-delta.down{color:var(--danger);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.card{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+.card-header{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:14px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card-body{padding:18px;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.section-title{font-size:21px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:10px;}
+.section-sub{font-size:13px;color:var(--text-muted);margin-top:2px;font-weight:600;}
+
+/* ── BTN ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:50px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-primary{background:linear-gradient(135deg,#1a6fff,#0047cc);color:#fff;box-shadow:0 4px 12px rgba(26,111,255,.3);}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);}
+.btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary);}
+.btn-outline:hover{background:var(--primary);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#dc2626;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-sm{padding:6px 13px;font-size:12px;}
+.btn-ghost{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);}
+.btn-ghost:hover{background:rgba(255,255,255,.15);color:#fff;}
+
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{padding:10px 15px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);font-weight:800;border-bottom:1.5px solid var(--border);background:var(--bg);}
+.data-table td{padding:12px 15px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:hover td{background:#f7f9ff;}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-blue{background:#dbeafe;color:#1d4ed8;}.badge-green{background:#d1fae5;color:#065f46;}
+.badge-orange{background:#ffedd5;color:#9a3412;}.badge-purple{background:#ede9fe;color:#6d28d9;}
+.badge-red{background:#fee2e2;color:#991b1b;}.badge-teal{background:#ccfbf1;color:#134e4a;}
+.badge-gray{background:#f3f4f6;color:#374151;}.badge-yellow{background:#fef9c3;color:#854d0e;}
+.badge-dark{background:#1a2340;color:#fff;}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.5px;}
+.form-control{padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .2s;}
+.form-control:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,111,255,.1);}
+textarea.form-control{resize:vertical;min-height:90px;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(11,26,61,.6);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);width:92%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(11,26,61,.3);animation:slideUp .28s ease;}
+.modal.modal-sm{max-width:460px;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:17px;font-weight:800;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ── USER MANAGEMENT PAGE ── */
+.user-row-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;margin-bottom:10px;}
+.user-row-card:hover{border-color:var(--primary);box-shadow:var(--shadow);}
+.user-row-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1a6fff,#00d4aa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;flex-shrink:0;}
+.user-row-info{flex:1;}
+.user-row-name{font-size:14px;font-weight:800;color:var(--text);}
+.user-row-email{font-size:12px;color:var(--text-muted);margin-top:1px;}
+.user-row-meta{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.role-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.role-admin{background:#0b1a3d;color:#fff;}
+.role-clinician{background:#d1fae5;color:#065f46;}
+.role-billing{background:#dbeafe;color:#1d4ed8;}
+.role-readonly{background:#f3f4f6;color:#374151;}
+.user-inactive{opacity:.5;}
+.perm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.perm-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;}
+.perm-item.has{color:var(--success);}
+.perm-item.nope{color:var(--text-muted);}
+
+/* ── MISC ── */
+.alert-bar{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:13px;font-weight:600;}
+.alert-info{background:#dbeafe;color:#1d4ed8;border-left:4px solid #3b82f6;}
+.alert-warning{background:#fef3c7;color:#92400e;border-left:4px solid var(--warning);}
+.alert-success{background:#d1fae5;color:#065f46;border-left:4px solid var(--success);}
+.alert-danger{background:#fee2e2;color:#991b1b;border-left:4px solid var(--danger);}
+.progress-bar{height:6px;background:var(--border);border-radius:20px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:20px;transition:width .4s;}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+.patient-row{display:flex;align-items:center;gap:10px;}
+.patient-name{font-weight:700;font-size:13px;}
+.patient-id{font-size:11px;color:var(--text-muted);}
+.schedule-slot{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.schedule-slot:last-child{border-bottom:none;}
+.slot-time{font-size:12px;font-weight:700;color:var(--text-muted);width:64px;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+.slot-block{flex:1;padding:8px 12px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.slot-block.st{border-left:3px solid var(--accent);background:#f0fdfb;}
+.slot-block.ot{border-left:3px solid var(--accent3);background:#faf5ff;}
+.slot-block.pt{border-left:3px solid var(--accent2);background:#fff7f0;}
+.slot-block.eval{border-left:3px solid var(--warning);background:#fffbeb;}
+.slot-patient{font-size:13px;font-weight:700;}
+.slot-type{font-size:11px;color:var(--text-muted);}
+.ai-panel{background:linear-gradient(135deg,#0b1a3d,#162d5a);border-radius:var(--radius);padding:18px;color:#fff;position:relative;overflow:hidden;}
+.ai-title{font-size:12px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;position:relative;z-index:1;}
+.ai-insight{font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:12px;position:relative;z-index:1;}
+.ai-suggestions{display:flex;flex-direction:column;gap:7px;position:relative;z-index:1;}
+.ai-suggestion-item{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius-sm);padding:8px 11px;font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.88);}
+.ai-suggestion-item:hover{background:rgba(255,255,255,.16);color:#fff;}
+.quick-note{background:linear-gradient(135deg,#fffbeb,#fff7f0);border:1.5px solid #fbbf24;border-radius:var(--radius);padding:15px;margin-bottom:18px;}
+.voice-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;border-radius:50px;border:none;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.notif-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.notif-item:last-child{border-bottom:none;}
+.notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.goal-item{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px;margin-bottom:9px;}
+.goal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.goal-name{font-weight:800;font-size:13px;}
+.goal-progress-row{display:flex;align-items:center;gap:10px;}
+.goal-pct{font-size:12px;font-weight:800;color:var(--primary);min-width:36px;}
+.billing-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.kpi-box{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:15px;text-align:center;}
+.kpi-val{font-size:22px;font-weight:900;}
+.kpi-lbl{font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+.ai-fab{position:fixed;bottom:26px;right:26px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1a6fff,#00d4aa);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 8px 24px rgba(26,111,255,.4);transition:all .2s;display:flex;align-items:center;justify-content:center;z-index:200;}
+.toast{position:fixed;bottom:90px;right:26px;background:#1a2340;color:#fff;padding:11px 20px;border-radius:50px;font-size:13px;font-weight:700;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:none;}
+@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top:2px solid #fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+.gdrive-steps{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;}
+.gdrive-step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start;}
+.gdrive-step:last-child{margin-bottom:0;}
+.step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a6fff,#00d4aa);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;}
+.step-content strong{font-size:13px;font-weight:800;display:block;margin-bottom:3px;}
+.step-content p{font-size:12px;color:var(--text-soft);line-height:1.6;}
+.step-content code{background:#f0f4ff;color:var(--primary);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;}
+@media(max-width:900px){#sidebar{width:58px;}#sidebar .nav-item span:not(.nav-icon),#sidebar .nav-section-label,#sidebar .logo-text-block,#sidebar .user-info,#sidebar .nav-badge,#sidebar .role-pill{display:none;}#main{margin-left:58px;}.grid-2{grid-template-columns:1fr;}.stats-row{grid-template-columns:1fr 1fr;}.billing-kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ════════ AUTH SCREEN ════════ -->
+<div id="auth-screen">
+  <div class="auth-card" id="auth-card">
+
+    <!-- Default: login prompt (shown before checkAuth runs) -->
+    <div id="auth-login">
+      <div class="auth-logo">
+        <svg viewBox="0 0 60 60" style="width:38px;height:38px;flex-shrink:0"><defs><linearGradient id="ag" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a6fff"/><stop offset="100%" stop-color="#00d4aa"/></linearGradient></defs><circle cx="30" cy="30" r="28" fill="url(#ag)"/><text x="30" y="37" text-anchor="middle" font-size="22" fill="white" font-family="Nunito" font-weight="900">P</text></svg>
+        <div class="auth-brand">PediaLume-EMR</div>
+      </div>
+      <div class="auth-tagline">Pediatric therapy platform for <strong>your clinic</strong>.<br>Sign in with your Google account to continue.</div>
+
+      <!-- Client ID field — shown only until ID is saved -->
+      <div id="client-id-section" style="margin-bottom:18px;text-align:left;">
+        <label style="font-size:11px;font-weight:800;color:#5a6a8a;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Google OAuth Client ID</label>
+        <div style="display:flex;gap:8px;">
+          <input id="client-id-input" type="text" placeholder="Paste your Client ID here…"
+            style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1a2340;outline:none;">
+          <button
+            style="padding:9px 16px;background:#1a6fff;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"
+            onclick="(function(){
+              var v = document.getElementById('client-id-input').value.trim();
+              var m = document.getElementById('client-id-msg');
+              if (!v) { m.style.color='#dc2626'; m.textContent='Please paste your Client ID first.'; return; }
+              if (!v.includes('.apps.googleusercontent.com')) { m.style.color='#dc2626'; m.textContent='Invalid — must end with .apps.googleusercontent.com'; return; }
+              window._PL_CLIENT_ID = v;
+              try { localStorage.setItem('pl_client_id', v); } catch(e){}
+              m.style.color='#065f46';
+              m.style.fontWeight='700';
+              m.textContent='✅ Client ID saved! Now click Continue with Google.';
+              document.getElementById('client-id-input').style.borderColor='#10b981';
+            })()">Save</button>
+        </div>
+        <div id="client-id-msg" style="font-size:11px;margin-top:6px;line-height:1.6;color:#8a9abf;">
+          Get your free Client ID at <a href="https://console.cloud.google.com" target="_blank" style="color:#1a6fff;font-weight:700;">console.cloud.google.com</a> — see DEPLOY_GUIDE.pdf for steps.
+        </div>
+      </div>
+
+      <button class="btn-google" id="btn-google-signin">
+        <svg viewBox="0 0 48 48" style="width:18px;height:18px"><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="#FBBC05" d="M10.53 28.59c-.49-1.47-.76-3.04-.76-4.59s.27-3.12.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.55 10.78l7.98-6.19z"/><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.55 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-footer-text">Your patient data is stored in your own Google Drive.<br>PediaLume-EMR never stores your data on external servers.</div>
+      <div class="auth-footer-links"><a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a></div>
+    </div>
+
+    <!-- Signing in state -->
+    <div id="auth-signing" style="display:none">
+      <div class="auth-spinner"></div>
+      <div class="auth-title" style="font-size:16px;font-weight:700;color:var(--text-soft)">Signing in…</div>
+    </div>
+
+    <!-- Error/status body (shown on auth failure) -->
+    <div id="auth-body" style="display:none"></div>
+
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-wrap">
+        <svg viewBox="0 0 60 60" style="width:36px;height:36px;flex-shrink:0"><defs><linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a6fff"/><stop offset="100%" stop-color="#00d4aa"/></linearGradient></defs><circle cx="30" cy="30" r="28" fill="url(#sg)"/><text x="30" y="37" text-anchor="middle" font-size="22" fill="white" font-family="Nunito" font-weight="900">P</text></svg>
+        <div class="logo-text-block"><div class="brand">PediaLume-EMR</div><div class="sub">Pediatric Therapy</div></div>
+      </div>
+    </div>
+    <div class="nav-section-label">CLINICAL</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span><span>Schedule</span><span class="nav-badge" id="nb-appt">0</span></div>
+    <div class="nav-item" onclick="showPage('patients',this)"><span class="nav-icon">👶</span><span>Patient Registry</span></div>
+    <div class="nav-item" onclick="showPage('notes',this)"><span class="nav-icon">📋</span><span>Progress Notes</span><span class="nav-badge" id="nb-notes">0</span></div>
+    <div class="nav-item" onclick="showPage('treatment',this)"><span class="nav-icon">🎯</span><span>Treatment Plans</span></div>
+    <div class="nav-item" onclick="showPage('goals',this)"><span class="nav-icon">📈</span><span>Goal Tracking</span></div>
+    <div class="nav-section-label">SPECIALTIES</div>
+    <div class="nav-item" onclick="showPage('speech',this)"><span class="nav-icon">🗣️</span><span>Speech Therapy</span></div>
+    <div class="nav-item" onclick="showPage('ot',this)"><span class="nav-icon">✋</span><span>Occupational Therapy</span></div>
+    <div class="nav-item" onclick="showPage('pt',this)"><span class="nav-icon">🦵</span><span>Physical Therapy</span></div>
+    <div class="nav-section-label">ADMIN</div>
+    <div class="nav-item billing-nav" onclick="showPage('billing',this)"><span class="nav-icon">💵</span><span>Billing & RCM</span></div>
+    <div class="nav-item" onclick="showPage('analytics',this)"><span class="nav-icon">📊</span><span>Analytics</span></div>
+    <div class="nav-item admin-nav" id="users-nav-item" onclick="showPage('users',this)"><span class="nav-icon">👥</span><span>User Management</span></div>
+    <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <div class="uname" id="sb-name">Loading…</div>
+          <div class="urole" id="sb-email" style="font-size:10px;opacity:.7"></div>
+          <div class="role-pill" id="sb-role">—</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="search-bar"><span>🔍</span><input type="text" id="global-search" placeholder="Search patients, notes…" oninput="doSearch(this.value)"></div>
+      <div class="drive-chip" id="drive-chip">● Connecting…</div>
+      <div class="ai-chip" onclick="openModal('ai-modal')"><div class="ai-dot"></div>AI Assistant</div>
+      <div class="topbar-btn" id="topbar-user" title=""></div>
+    </div>
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active fade-in">
+        <div class="section-header">
+          <div><div class="section-title">🏠 Dashboard</div><div class="section-sub" id="dash-sub">Loading from Google Drive…</div></div>
+          <button class="btn btn-primary" onclick="openModal('new-patient-modal')">+ New Patient</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card blue"><div class="stat-icon">👶</div><div class="stat-value" id="s-active">—</div><div class="stat-label">Active Patients</div></div>
+          <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="s-appts">—</div><div class="stat-label">Today's Appts</div></div>
+          <div class="stat-card orange"><div class="stat-icon">📋</div><div class="stat-value" id="s-pending">—</div><div class="stat-label">Pending Notes</div></div>
+          <div class="stat-card purple"><div class="stat-icon">💵</div><div class="stat-value" id="s-revenue">—</div><div class="stat-label">MTD Revenue</div></div>
+          <div class="stat-card teal"><div class="stat-icon">🎯</div><div class="stat-value">87%</div><div class="stat-label">Goal Attainment</div></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">📅 Today's Schedule</div><button class="btn btn-outline btn-sm" onclick="showPage('schedule',null)">Full View</button></div>
+            <div class="card-body" style="padding:10px 18px" id="dash-schedule"><div style="text-align:center;padding:20px;color:var(--text-muted)"><div class="spinner" style="border-color:rgba(26,111,255,.2);border-top-color:var(--primary);margin:0 auto 8px"></div>Loading…</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="ai-panel">
+              <div class="ai-title">🤖 AI Insights</div>
+              <div class="ai-insight" id="ai-insight">Analyzing data from Google Drive…</div>
+              <div class="ai-suggestions">
+                <div class="ai-suggestion-item" onclick="openModal('ai-modal')">📝 Generate today's session notes</div>
+                <div class="ai-suggestion-item" onclick="openModal('ai-modal')">🎯 Review goal progress</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">⚠️ Pending Notes</div><span class="badge badge-orange" id="dash-pending-count">0</span></div>
+              <div class="card-body" style="padding:10px 18px" id="dash-pending"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">👶 Recent Patients</div><button class="btn btn-outline btn-sm" onclick="showPage('patients',null)">View All</button></div>
+          <table class="data-table"><thead><tr><th>Patient</th><th>Services</th><th>Insurance</th><th>Added</th><th>Status</th><th></th></tr></thead>
+          <tbody id="dash-patients"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- PATIENTS -->
+      <div id="page-patients" class="page fade-in">
+        <div class="section-header">
+          <div><div class="section-title">👶 Patient Registry</div><div class="section-sub" id="pat-count">Loading…</div></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline" onclick="exportPatients()">📤 Export CSV</button>
+            <button class="btn btn-primary edit-clinical" onclick="openModal('new-patient-modal')">+ Add Patient</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header" style="gap:12px;flex-wrap:wrap">
+            <div class="search-bar" style="width:100%;max-width:300px"><span>🔍</span><input type="text" id="pat-search" placeholder="Search name, ID, diagnosis…" oninput="filterPatients()"></div>
+            <select class="form-control" style="width:150px" id="pat-filter-svc" onchange="filterPatients()"><option value="">All Services</option><option>ST</option><option>OT</option><option>PT</option><option>BH</option></select>
+            <select class="form-control" style="width:150px" id="pat-filter-ins" onchange="filterPatients()"><option value="">All Insurance</option><option>Medicaid</option><option>CHIP</option><option>BCBS</option><option>Aetna</option><option>Private Pay</option></select>
+          </div>
+          <table class="data-table"><thead><tr><th>Patient</th><th>DOB</th><th>Diagnosis</th><th>Services</th><th>Insurance</th><th>Status</th><th></th></tr></thead>
+          <tbody id="pat-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading from Google Drive…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div id="page-notes" class="page fade-in">
+        <div class="section-header">
+          <div><div class="section-title">📋 Progress Notes</div><div class="section-sub">Voice-to-text · AI-assisted · Saved to Drive</div></div>
+          <button class="btn btn-primary edit-clinical" onclick="openModal('note-modal')">+ New Note</button>
+        </div>
+        <div class="quick-note">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <strong>🤖 Quick Dictation</strong>
+            <div style="display:flex;gap:8px">
+              <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">🎙️ Dictate</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#00d4aa,#1a6fff);color:#fff" onclick="aiGenerateNote()">✨ AI Generate</button>
+            </div>
+          </div>
+          <select class="form-control" style="margin-bottom:10px" id="qn-patient"><option value="">Select patient…</option></select>
+          <textarea class="form-control" id="note-area" rows="4" placeholder="Dictate or type your SOAP note…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary edit-clinical" onclick="saveQuickNote()">💾 Save to Drive</button></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 Recent Notes</div></div>
+          <table class="data-table"><thead><tr><th>Patient</th><th>Date</th><th>Service</th><th>CPT</th><th>Status</th><th>Provider</th><th></th></tr></thead>
+          <tbody id="notes-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- TREATMENT PLANS -->
+      <div id="page-treatment" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">🎯 Treatment Plans</div><div class="section-sub">DSM-5 integrated · Goal tracking</div></div></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><div class="card-title">🗣️ Emma Rodriguez — ST</div><span class="badge badge-green">Active</span></div><div class="card-body">
+            <div class="alert-bar alert-success">Auth: Feb 1–Jul 31, 2026 · Medicaid</div>
+            <div class="goal-item"><div class="goal-header"><div class="goal-name">Articulate /r/ conversational 80%</div><span class="badge badge-teal">In Progress</span></div><div class="goal-progress-row"><div class="goal-pct">78%</div><div style="flex:1"><div class="progress-bar"><div class="progress-fill" style="width:78%;background:linear-gradient(90deg,#10b981,#34d399)"></div></div></div></div></div>
+          </div></div>
+          <div class="card"><div class="card-header"><div class="card-title">✋ Liam Chen — OT</div><span class="badge badge-green">Active</span></div><div class="card-body">
+            <div class="alert-bar alert-success">Auth: Jan 15–Jun 30, 2026 · BCBS</div>
+            <div class="goal-item"><div class="goal-header"><div class="goal-name">Bilateral hand coordination ≥80%</div><span class="badge badge-teal">In Progress</span></div><div class="goal-progress-row"><div class="goal-pct">64%</div><div style="flex:1"><div class="progress-bar"><div class="progress-fill" style="width:64%;background:linear-gradient(90deg,#a855f7,#ec4899)"></div></div></div></div></div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- GOALS -->
+      <div id="page-goals" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">📈 Goal Tracking</div><div class="section-sub">All goals stored in Google Sheets</div></div><button class="btn btn-primary edit-clinical" onclick="openModal('goal-modal')">+ Add Goal</button></div>
+        <div class="card"><div class="card-header"><div class="card-title">Active Goals</div></div>
+          <table class="data-table"><thead><tr><th>Patient</th><th>Goal</th><th>Service</th><th>Progress</th><th>Target</th><th>Status</th><th></th></tr></thead>
+          <tbody id="goals-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div id="page-schedule" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">📅 Schedule</div><div class="section-sub">Appointments saved to Google Drive</div></div><button class="btn btn-primary edit-clinical" onclick="openModal('appt-modal')">+ New Appointment</button></div>
+        <div class="card"><div class="card-header"><div class="card-title">Today's Appointments</div></div>
+          <table class="data-table"><thead><tr><th>Time</th><th>Patient</th><th>Service</th><th>Type</th><th>Therapist</th><th>Status</th><th></th></tr></thead>
+          <tbody id="sched-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- SPECIALTIES -->
+      <div id="page-speech" class="page fade-in"><div class="section-header"><div><div class="section-title">🗣️ Speech Therapy</div></div></div><div class="alert-bar alert-info">Articulation · Language · Voice · Fluency · AAC — all templates saved to Drive</div></div>
+      <div id="page-ot" class="page fade-in"><div class="section-header"><div><div class="section-title">✋ Occupational Therapy</div></div></div><div class="alert-bar alert-info">Sensory Integration · Fine Motor · Feeding · ADL</div></div>
+      <div id="page-pt" class="page fade-in"><div class="section-header"><div><div class="section-title">🦵 Physical Therapy</div></div></div><div class="alert-bar alert-info">Gross Motor · Gait Training · Therapeutic Exercise</div></div>
+
+      <!-- BILLING -->
+      <div id="page-billing" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">💵 Billing & RCM</div><div class="section-sub">Claims in Google Sheets</div></div><button class="btn btn-primary billing-edit" onclick="openModal('bill-modal')">+ Add Claim</button></div>
+        <div class="billing-kpi">
+          <div class="kpi-box"><div class="kpi-val" style="color:var(--success)" id="kpi-mtd">—</div><div class="kpi-lbl">MTD Revenue</div></div>
+          <div class="kpi-box"><div class="kpi-val" style="color:var(--warning)" id="kpi-ar">—</div><div class="kpi-lbl">Outstanding AR</div></div>
+          <div class="kpi-box"><div class="kpi-val" style="color:var(--danger)" id="kpi-deny">—</div><div class="kpi-lbl">Denials</div></div>
+          <div class="kpi-box"><div class="kpi-val" style="color:var(--primary)">96%</div><div class="kpi-lbl">Clean Claim Rate</div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">Recent Claims</div></div>
+          <table class="data-table"><thead><tr><th>Patient</th><th>DOS</th><th>CPT</th><th>Billed</th><th>Insurance</th><th>Status</th></tr></thead>
+          <tbody id="billing-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div id="page-analytics" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">📈 Analytics</div></div></div>
+        <div class="stats-row">
+          <div class="stat-card blue"><div class="stat-icon">📊</div><div class="stat-value">87%</div><div class="stat-label">Avg Goal Attainment</div><div class="stat-delta up">↑ 3% QoQ</div></div>
+          <div class="stat-card green"><div class="stat-icon">⏱️</div><div class="stat-value">6.4</div><div class="stat-label">Avg Wks to Goal</div></div>
+          <div class="stat-card teal"><div class="stat-icon">💵</div><div class="stat-value" id="ana-rps">—</div><div class="stat-label">Revenue/Session</div></div>
+          <div class="stat-card orange"><div class="stat-icon">📉</div><div class="stat-value">4%</div><div class="stat-label">Cancellation Rate</div></div>
+        </div>
+      </div>
+
+      <!-- ═══ USER MANAGEMENT ═══ -->
+      <div id="page-users" class="page fade-in">
+        <div class="section-header">
+          <div>
+            <div class="section-title">👥 User Management</div>
+            <div class="section-sub" id="users-sub">Manage who can access PediaLume-EMR</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-user-modal')">＋ Invite Member</button>
+        </div>
+
+        <div class="alert-bar alert-info" id="domain-info-bar">
+          🔒 Loading domain configuration…
+        </div>
+
+        <!-- Role reference card -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🔐 Role Permissions</div></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Role</th><th>Patients</th><th>Notes / Goals</th><th>Billing</th><th>Settings</th><th>User Mgmt</th></tr></thead>
+              <tbody>
+                <tr><td><span class="role-badge role-admin">admin</span></td><td>✅ Full</td><td>✅ Full</td><td>✅ Full</td><td>✅ Full</td><td>✅ Full</td></tr>
+                <tr><td><span class="role-badge role-clinician">clinician</span></td><td>✅ Full</td><td>✅ Full</td><td>👁 View only</td><td>❌</td><td>❌</td></tr>
+                <tr><td><span class="role-badge role-billing">billing</span></td><td>👁 View</td><td>👁 View</td><td>✅ Full</td><td>❌</td><td>❌</td></tr>
+                <tr><td><span class="role-badge role-readonly">readonly</span></td><td>👁 View</td><td>👁 View</td><td>❌</td><td>❌</td><td>❌</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- User list -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Registered Users</div>
+            <button class="btn btn-outline btn-sm" onclick="loadUsers()">↻ Refresh</button>
+          </div>
+          <div class="card-body" id="users-list">
+            <div style="text-align:center;padding:30px;color:var(--text-muted)">
+              <div class="spinner" style="border-color:rgba(26,111,255,.2);border-top-color:var(--primary);margin:0 auto 10px;width:24px;height:24px"></div>
+              Loading users from Google Drive…
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page fade-in">
+        <div class="section-header"><div><div class="section-title">⚙️ Settings</div><div class="section-sub">Saved to Google Script Properties</div></div><button class="btn btn-primary admin-only" onclick="saveSettingsForm()">💾 Save to Drive</button></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><div class="card-title">🏥 Clinic Info</div></div><div class="card-body">
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Clinic Name</label><input class="form-control" id="set-name" placeholder="PediaLume Pediatric Therapy"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Address</label><input class="form-control" id="set-address"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Phone</label><input class="form-control" id="set-phone"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Email</label><input class="form-control" id="set-email" type="email"></div>
+          </div></div>
+          <div class="card"><div class="card-header"><div class="card-title">👤 Provider + Domain</div></div><div class="card-body">
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Primary Therapist</label><input class="form-control" id="set-therapist"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">NPI Number</label><input class="form-control" id="set-npi"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Tax ID / EIN</label><input class="form-control" id="set-taxid"></div>
+            <div class="form-group" style="margin-bottom:12px"><label class="form-label">Allowed Domain (read-only)</label><input class="form-control" id="set-domain" readonly style="background:#f3f4f6;color:var(--text-muted)"></div>
+          </div></div>
+        </div>
+      </div>
+
+    </div><!-- end #content -->
+  </div><!-- end #main -->
+</div><!-- end #app -->
+
+<!-- ════════ MODALS ════════ -->
+
+<!-- Invite Team Member (matches CLM style) -->
+<div class="modal-overlay" id="add-user-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title">Invite Team Member</div><button class="modal-close" onclick="closeModal('add-user-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Email Address</label>
+        <input class="form-control" id="au-email" placeholder="therapist@yourclinic.com" type="email">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="au-domain-hint">Must be from your clinic domain</div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Display Name</label>
+        <input class="form-control" id="au-name" placeholder="Dr. Smith">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Role</label>
+        <select class="form-control" id="au-role">
+          <option value="admin">Admin — full access, can manage users</option>
+          <option value="clinician">Clinician — create, edit patients, notes, goals</option>
+          <option value="billing">Billing — view clinical + full billing access</option>
+          <option value="readonly">Viewer — read-only access</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Notes (optional)</label>
+        <input class="form-control" id="au-notes" placeholder="e.g. Part-time SLP, Tue/Thu only">
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;padding:10px 0">They'll sign in with their Google account. Access is restricted to the email address you specify.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-user-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddUser()" id="btn-add-user">Send Invite →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User -->
+<div class="modal-overlay" id="edit-user-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title">✏️ Edit User</div><button class="modal-close" onclick="closeModal('edit-user-modal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="eu-email-hidden">
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Email (read-only)</label>
+        <input class="form-control" id="eu-email-display" readonly style="background:#f3f4f6">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Display Name</label>
+        <input class="form-control" id="eu-name">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Role</label>
+        <select class="form-control" id="eu-role">
+          <option value="admin">admin</option>
+          <option value="clinician">clinician</option>
+          <option value="billing">billing</option>
+          <option value="readonly">readonly</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="eu-active">
+          <option value="true">Active</option>
+          <option value="false">Inactive (blocked)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Notes</label>
+        <input class="form-control" id="eu-notes">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="confirmRemoveUser()">🗑 Remove</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-outline" onclick="closeModal('edit-user-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEditUser()" id="btn-edit-user">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Patient -->
+<div class="modal-overlay" id="new-patient-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">👶 Add New Patient</div><button class="modal-close" onclick="closeModal('new-patient-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label class="form-label">First Name *</label><input class="form-control" id="np-fname"></div><div class="form-group"><label class="form-label">Last Name *</label><input class="form-control" id="np-lname"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date" id="np-dob"></div><div class="form-group"><label class="form-label">Gender</label><select class="form-control" id="np-gender"><option>Female</option><option>Male</option><option>Non-binary</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Diagnosis (ICD-10)</label><input class="form-control" id="np-dx" placeholder="F80.0"></div><div class="form-group"><label class="form-label">Services</label><input class="form-control" id="np-svc" placeholder="ST, OT…"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Insurance</label><select class="form-control" id="np-ins"><option>Medicaid</option><option>CHIP</option><option>BCBS</option><option>Aetna</option><option>Private Pay</option></select></div><div class="form-group"><label class="form-label">Insurance ID</label><input class="form-control" id="np-insid"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Guardian Name</label><input class="form-control" id="np-guardian"></div><div class="form-group"><label class="form-label">Guardian Phone</label><input class="form-control" id="np-phone"></div></div>
+      <div class="form-group"><label class="form-label">Guardian Email</label><input class="form-control" id="np-email" type="email"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('new-patient-modal')">Cancel</button><button class="btn btn-primary" id="btn-save-patient" onclick="submitPatient()">💾 Save to Drive</button></div>
+  </div>
+</div>
+
+<!-- New Note -->
+<div class="modal-overlay" id="note-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">📋 New Progress Note</div><button class="modal-close" onclick="closeModal('note-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label class="form-label">Patient *</label><select class="form-control" id="nm-patient"></select></div><div class="form-group"><label class="form-label">Date *</label><input class="form-control" type="date" id="nm-date"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Service</label><select class="form-control" id="nm-svc"><option>Speech Therapy</option><option>Occupational Therapy</option><option>Physical Therapy</option><option>Behavioral Health</option></select></div><div class="form-group"><label class="form-label">CPT Code</label><input class="form-control" id="nm-cpt" placeholder="92507"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">ICD-10</label><input class="form-control" id="nm-icd" placeholder="F80.0"></div><div class="form-group"><label class="form-label">Duration (min)</label><input class="form-control" type="number" id="nm-dur" value="45"></div></div>
+      <div class="form-group" style="margin-bottom:12px"><label class="form-label">Note Content (SOAP)</label><textarea class="form-control" id="nm-content" rows="6" placeholder="S: …&#10;O: …&#10;A: …&#10;P: …"></textarea></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Goal Progress (%)</label><input class="form-control" type="number" id="nm-goal" min="0" max="100"></div><div class="form-group"><label class="form-label">Therapist</label><input class="form-control" id="nm-therapist"></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('note-modal')">Cancel</button><button class="btn btn-primary" id="btn-save-note" onclick="submitNote()">💾 Save to Drive</button></div>
+  </div>
+</div>
+
+<!-- New Goal -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title">🎯 Add Goal</div><button class="modal-close" onclick="closeModal('goal-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label class="form-label">Patient *</label><select class="form-control" id="gm-patient"></select></div><div class="form-group"><label class="form-label">Service</label><select class="form-control" id="gm-svc"><option>Speech Therapy</option><option>Occupational Therapy</option><option>Physical Therapy</option></select></div></div>
+      <div class="form-group" style="margin-bottom:12px"><label class="form-label">Goal Text *</label><textarea class="form-control" id="gm-text" rows="3" placeholder="Patient will…"></textarea></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Baseline %</label><input class="form-control" type="number" id="gm-base" value="0"></div><div class="form-group"><label class="form-label">Target %</label><input class="form-control" type="number" id="gm-target" value="80"></div></div>
+      <div class="form-group"><label class="form-label">Target Date</label><input class="form-control" type="date" id="gm-date"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('goal-modal')">Cancel</button><button class="btn btn-primary" id="btn-save-goal" onclick="submitGoal()">💾 Save to Drive</button></div>
+  </div>
+</div>
+
+<!-- Appointment -->
+<div class="modal-overlay" id="appt-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title">📅 New Appointment</div><button class="modal-close" onclick="closeModal('appt-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label class="form-label">Patient *</label><select class="form-control" id="am-patient"></select></div><div class="form-group"><label class="form-label">Date *</label><input class="form-control" type="date" id="am-date"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Start</label><input class="form-control" type="time" id="am-start" value="09:00"></div><div class="form-group"><label class="form-label">End</label><input class="form-control" type="time" id="am-end" value="10:00"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Service</label><select class="form-control" id="am-svc"><option>Speech Therapy</option><option>Occupational Therapy</option><option>Physical Therapy</option><option>Evaluation</option></select></div><div class="form-group"><label class="form-label">Type</label><select class="form-control" id="am-type"><option>Individual</option><option>Group</option><option>Evaluation</option><option>Telehealth</option></select></div></div>
+      <div class="form-group"><label class="form-label">Therapist</label><input class="form-control" id="am-therapist"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('appt-modal')">Cancel</button><button class="btn btn-primary" id="btn-save-appt" onclick="submitAppt()">💾 Save to Drive</button></div>
+  </div>
+</div>
+
+<!-- Billing -->
+<div class="modal-overlay" id="bill-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title">💵 Add Billing Record</div><button class="modal-close" onclick="closeModal('bill-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><div class="form-group"><label class="form-label">Patient *</label><select class="form-control" id="bm-patient"></select></div><div class="form-group"><label class="form-label">Date of Service *</label><input class="form-control" type="date" id="bm-dos"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">CPT Code</label><input class="form-control" id="bm-cpt" placeholder="92507"></div><div class="form-group"><label class="form-label">ICD-10</label><input class="form-control" id="bm-icd" placeholder="F80.0"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Fee ($)</label><input class="form-control" type="number" id="bm-fee"></div><div class="form-group"><label class="form-label">Insurance</label><select class="form-control" id="bm-ins"><option>Medicaid</option><option>CHIP</option><option>BCBS</option><option>Aetna</option><option>Private Pay</option></select></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('bill-modal')">Cancel</button><button class="btn btn-primary" id="btn-save-bill" onclick="submitBilling()">💾 Save to Drive</button></div>
+  </div>
+</div>
+
+<!-- AI -->
+<div class="modal-overlay" id="ai-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">🤖 AI Clinical Assistant</div><button class="modal-close" onclick="closeModal('ai-modal')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-sm btn-outline" onclick="setAIPrompt('Generate a SOAP note for articulation therapy ST session')">📝 SOAP Note</button>
+        <button class="btn btn-sm btn-outline" onclick="setAIPrompt('Suggest goals for phonological disorder F80.0')">🎯 Goals</button>
+        <button class="btn btn-sm btn-outline" onclick="setAIPrompt('CPT code for 45-min individual speech therapy')">💰 CPT Codes</button>
+        <button class="btn btn-sm btn-outline" onclick="setAIPrompt('Home exercise program for /r/ articulation')">🏠 HEP</button>
+      </div>
+      <textarea class="form-control" id="ai-input" rows="3" placeholder="Ask about documentation, codes, goals, assessments…" style="margin-bottom:10px"></textarea>
+      <button class="btn btn-primary" onclick="runAI()" style="width:100%">✨ Ask AI</button>
+      <div id="ai-response" style="display:none;margin-top:14px;background:#f0f4ff;border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;max-height:300px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<button class="ai-fab" onclick="openModal('ai-modal')">🤖</button>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  PediaLume-EMR — Browser-only, zero setup
+//  Auth:    Google Identity Services (OAuth popup)
+//  Storage: Google Sheets API + Google Drive API (direct REST)
+//  No Apps Script. No manual configuration. Just open and sign in.
+// ══════════════════════════════════════════════════════════════════
+
+// ── CONFIG — only thing you may change ───────────────────────────
+var CLIENT_ID   = 'YOUR_GOOGLE_OAUTH_CLIENT_ID';   // ← paste your Client ID here
+var SCOPES      = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+var FOLDER_NAME = 'PediaLume_Docs';
+var SS_NAME     = 'PediaLume-EMR_Data';
+var SHEETS = { patients:'Patients', notes:'Notes', appts:'Appointments', goals:'Goals', billing:'Billing', users:'Users', settings:'Settings' };
+
+var APP = {
+  user: {}, token: null, ssId: null, folderId: null,
+  patients:[], notes:[], appts:[], goals:[], billing:[], users:[]
+};
+
+// ── AUTH FLOW ─────────────────────────────────────────────────────
+window.onload = function() {
+  document.getElementById('btn-google-signin').addEventListener('click', startSignIn);
+
+  // Restore saved Client ID from localStorage
+  var savedId = localStorage.getItem('pl_client_id');
+  if (savedId) {
+    window._PL_CLIENT_ID = savedId;
+    CLIENT_ID = savedId;
+    var inp = document.getElementById('client-id-input');
+    var msg = document.getElementById('client-id-msg');
+    if (inp) inp.value = savedId;
+    if (msg) { msg.style.color='#065f46'; msg.style.fontWeight='700'; msg.textContent='✅ Client ID loaded. Click Continue with Google.'; }
+  }
+
+  // Auto-resume session if token exists
+  var saved = sessionStorage.getItem('pl_token');
+  if (saved && CLIENT_ID && CLIENT_ID !== 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
+    APP.token = saved;
+    var savedUser = sessionStorage.getItem('pl_user');
+    if (savedUser) try { APP.user = JSON.parse(savedUser); } catch(e){}
+    document.getElementById('auth-login').style.display = 'none';
+    document.getElementById('auth-signing').style.display = 'block';
+    verifyAndBoot();
+  }
+};
+
+function saveClientId() {
+  var input = document.getElementById('client-id-input');
+  var msgEl = document.getElementById('client-id-msg');
+  var btn   = document.getElementById('btn-google-signin');
+  var val   = input ? input.value.trim() : '';
+
+  function msg(text, color) {
+    if (msgEl) { msgEl.textContent = text; msgEl.style.color = color; }
+  }
+
+  if (!val) {
+    msg('⚠️ Please paste your Client ID first.', '#dc2626');
+    if (input) input.style.borderColor = '#dc2626';
+    return;
+  }
+  if (!val.includes('.apps.googleusercontent.com')) {
+    msg('⚠️ Invalid — should end with .apps.googleusercontent.com', '#dc2626');
+    if (input) input.style.borderColor = '#dc2626';
+    return;
+  }
+
+  // Save it
+  CLIENT_ID = val;
+  try { localStorage.setItem('pl_client_id', val); } catch(e){}
+
+  // Visual feedback
+  if (input) input.style.borderColor = '#10b981';
+  if (btn)   { btn.disabled = false; btn.style.opacity = '1'; }
+  msg('✅ Saved! Now click Continue with Google.', '#065f46');
+}
+
+function showSetupBanner(title, html) {
+  // Show inline in the auth card — don't hide the card
+  var loginDiv = document.getElementById('auth-login');
+  // Insert a banner above the Google button
+  var existing = document.getElementById('setup-banner');
+  if (existing) existing.remove();
+  var banner = document.createElement('div');
+  banner.id = 'setup-banner';
+  banner.style.cssText = 'background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:14px 16px;margin-bottom:18px;font-size:12px;line-height:1.7;color:#78350f;text-align:left;';
+  banner.innerHTML = '<div style="font-weight:800;font-size:13px;margin-bottom:6px;color:#92400e;">' + title + '</div>' + html;
+  // Insert before the google button
+  var btn = document.getElementById('btn-google-signin');
+  loginDiv.insertBefore(banner, btn);
+  btn.disabled = true;
+  btn.style.opacity = '0.4';
+  btn.style.cursor = 'not-allowed';
+}
+
+function startSignIn() {
+  // Pick up Client ID from inline save OR localStorage OR hardcoded value
+  var id = window._PL_CLIENT_ID || localStorage.getItem('pl_client_id') || CLIENT_ID;
+  if (id && id !== 'YOUR_GOOGLE_OAUTH_CLIENT_ID') CLIENT_ID = id;
+
+  if (!CLIENT_ID || CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
+    var m = document.getElementById('client-id-msg');
+    if (m) { m.style.color='#dc2626'; m.style.fontWeight='700'; m.textContent='⚠️ Paste your Client ID above and click Save first.'; }
+    return;
+  }
+
+  if (location.protocol === 'file:') {
+    showSetupBanner('⚠️ Cannot sign in from a local file',
+      'Google OAuth requires a hosted URL (http:// or https://). ' +
+      'Upload this file to GitHub Pages — it\'s free and takes 2 minutes. ' +
+      'See <b>DEPLOY_GUIDE.pdf</b> for instructions.');
+    return;
+  }
+
+  // Wait for GIS to be ready
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+    var btn = document.getElementById('btn-google-signin');
+    btn.disabled = true;
+    btn.textContent = 'Loading Google…';
+    var tries = 0;
+    var wait = setInterval(function() {
+      tries++;
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        clearInterval(wait);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 48 48" style="width:18px;height:18px"><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="#FBBC05" d="M10.53 28.59c-.49-1.47-.76-3.04-.76-4.59s.27-3.12.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.55 10.78l7.98-6.19z"/><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.55 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/></svg> Continue with Google';
+        startSignIn();
+      } else if (tries > 10) {
+        clearInterval(wait);
+        showSetupBanner('⚠️ Google failed to load', 'Check your internet connection and reload the page. Make sure you\'re not blocking scripts from <b>accounts.google.com</b>.');
+      }
+    }, 500);
+    return;
+  }
+
+  // Show spinner
+  document.getElementById('auth-login').style.display = 'none';
+  document.getElementById('auth-signing').style.display = 'block';
+
+  try {
+    var client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: function(resp) {
+        if (resp.error) {
+          document.getElementById('auth-signing').style.display = 'none';
+          document.getElementById('auth-login').style.display = 'block';
+          showSetupBanner('❌ Sign-in failed: ' + resp.error,
+            resp.error === 'popup_blocked_by_browser'
+              ? 'Your browser blocked the Google sign-in popup. Click the popup blocker icon in your address bar and allow popups for this site, then try again.'
+              : resp.error === 'access_denied'
+              ? 'You declined the permissions. PediaLume-EMR needs Drive and Sheets access to save your data. Please try again and click Allow.'
+              : 'Make sure your Client ID is correct and <b>' + location.origin + '</b> is added as an Authorized JavaScript Origin in Google Cloud Console.'
+          );
+          return;
+        }
+        APP.token = resp.access_token;
+        sessionStorage.setItem('pl_token', APP.token);
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: 'Bearer ' + APP.token }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(info) {
+          APP.user = {
+            email:       info.email,
+            displayName: info.name || info.email.split('@')[0],
+            picture:     info.picture,
+            domain:      info.email.split('@')[1]
+          };
+          sessionStorage.setItem('pl_user', JSON.stringify(APP.user));
+          verifyAndBoot();
+        })
+        .catch(function() {
+          showAuthError('Profile Error', 'Could not fetch your Google profile. Check your connection and try again.', 'error');
+        });
+      }
+    });
+    client.requestAccessToken({ prompt: '' });
+  } catch(e) {
+    document.getElementById('auth-signing').style.display = 'none';
+    document.getElementById('auth-login').style.display = 'block';
+    showSetupBanner('❌ Error: ' + e.message,
+      'This usually means your Client ID is invalid or the origin <b>' + location.origin + '</b> is not authorised. Check your Google Cloud Console settings.'
+    );
+  }
+}
+
+function verifyAndBoot() {
+  // Check allowed domain setting (stored in Drive)
+  checkDomainAndUsers(function(authResult) {
+    if (authResult.ok) {
+      APP.user.role        = authResult.role;
+      APP.user.permissions = rolePerms(authResult.role);
+      APP.user.isOwner     = authResult.isOwner;
+      bootApp();
+    } else {
+      showAuthError(authResult.title, authResult.message, authResult.type);
+    }
+  });
+}
+
+function checkDomainAndUsers(cb) {
+  // Ensure spreadsheet and Users sheet exist, then check user list
+  ensureSpreadsheet(function() {
+    readSheet(SHEETS.users, function(rows) {
+      var allowedDomain = '';
+      // Check settings for domain lock
+      readSheet(SHEETS.settings, function(settings) {
+        settings.forEach(function(r) { if (r[0]==='allowed_domain') allowedDomain = r[1]||''; });
+
+        var userEmail = APP.user.email.toLowerCase();
+        var userDomain = APP.user.domain;
+
+        // Domain check
+        if (allowedDomain && userDomain !== allowedDomain) {
+          return cb({ ok:false, title:'🚫 Access Denied',
+            message:'This app is restricted to <strong>@'+allowedDomain+'</strong> accounts.<br>You are signed in as <strong>'+APP.user.email+'</strong>.',
+            type:'error' });
+        }
+
+        // Find user in registry
+        var match = rows.find(function(r){ return String(r[0]).toLowerCase()===userEmail; });
+
+        if (!match) {
+          if (rows.length === 0) {
+            // First ever user → become owner/admin automatically
+            appendRow(SHEETS.users, [userEmail, APP.user.displayName, 'admin', 'true', 'true', new Date().toISOString(), new Date().toISOString(), ''], function() {
+              cb({ ok:true, role:'admin', isOwner:true });
+            });
+          } else {
+            return cb({ ok:false, title:'👤 Not Registered',
+              message:'Your account (<strong>'+APP.user.email+'</strong>) hasn't been added yet.<br>Ask your administrator to invite you.',
+              type:'warning' });
+          }
+        } else {
+          var active = String(match[3]).toLowerCase();
+          if (active === 'false') {
+            return cb({ ok:false, title:'⛔ Account Deactivated',
+              message:'Your account has been deactivated. Contact your administrator.',
+              type:'error' });
+          }
+          // Update last login
+          updateUserLastLogin(userEmail);
+          cb({ ok:true, role:match[2]||'readonly', isOwner:String(match[4])==='true' });
+        }
+      });
+    });
+  });
+}
+
+function rolePerms(role) {
+  var m = {
+    admin:     { manageUsers:true,  viewBilling:true,  editBilling:true,  editClinical:true,  viewClinical:true,  editSettings:true  },
+    clinician: { manageUsers:false, viewBilling:false, editBilling:false, editClinical:true,  viewClinical:true,  editSettings:false },
+    billing:   { manageUsers:false, viewBilling:true,  editBilling:true,  editClinical:false, viewClinical:true,  editSettings:false },
+    readonly:  { manageUsers:false, viewBilling:false, editBilling:false, editClinical:false, viewClinical:true,  editSettings:false }
+  };
+  return m[role] || m['readonly'];
+}
+
+// ── SPREADSHEET / DRIVE SETUP (auto, first run) ───────────────────
+function ensureSpreadsheet(cb) {
+  if (APP.ssId) { cb(); return; }
+  var saved = sessionStorage.getItem('pl_ssId');
+  if (saved) { APP.ssId = saved; cb(); return; }
+
+  // Search Drive for existing spreadsheet
+  driveRequest('GET', 'https://www.googleapis.com/drive/v3/files?q=name%3D%22'+encodeURIComponent(SS_NAME)+'%22+and+mimeType%3D%22application/vnd.google-apps.spreadsheet%22+and+trashed%3Dfalse&fields=files(id,name)', null, function(r) {
+    var files = r && r.files ? r.files : [];
+    if (files.length > 0) {
+      APP.ssId = files[0].id;
+      sessionStorage.setItem('pl_ssId', APP.ssId);
+      ensureAllSheets(cb);
+    } else {
+      createSpreadsheet(cb);
+    }
+  });
+}
+
+function createSpreadsheet(cb) {
+  sheetsRequest('POST', 'https://sheets.googleapis.com/v4/spreadsheets', {
+    properties: { title: SS_NAME },
+    sheets: Object.values(SHEETS).map(function(n){ return { properties: { title: n } }; })
+  }, function(r) {
+    if (!r || !r.spreadsheetId) { showToast('❌ Could not create spreadsheet'); return; }
+    APP.ssId = r.spreadsheetId;
+    sessionStorage.setItem('pl_ssId', APP.ssId);
+    // Write headers to each sheet
+    initAllHeaders(function() {
+      // Move to Drive folder
+      ensureDriveFolder(function(fid) {
+        driveRequest('PATCH', 'https://www.googleapis.com/drive/v3/files/'+APP.ssId+'?addParents='+fid, {}, function(){ cb(); });
+      });
+    });
+  });
+}
+
+var HEADERS = {
+  Patients:     ['id','firstName','lastName','dob','gender','diagnosis','services','insurance','insuranceId','guardianName','guardianPhone','guardianEmail','primaryTherapist','status','dateAdded','notes'],
+  Notes:        ['id','patientId','patientName','date','therapist','service','noteType','content','cptCode','icdCode','duration','goalProgress','signature','signedAt','createdAt'],
+  Appointments: ['id','patientId','patientName','date','startTime','endTime','service','therapist','type','status','notes'],
+  Goals:        ['id','patientId','patientName','goalText','service','targetDate','progress','status','baseline','target','lastUpdated','notes'],
+  Billing:      ['id','patientId','patientName','dateOfService','cptCode','icdCode','units','fee','insurance','status','claimId','paidAmount','notes','createdAt'],
+  Users:        ['email','displayName','role','active','isOwner','lastLogin','addedAt','notes'],
+  Settings:     ['key','value']
+};
+
+function initAllHeaders(cb) {
+  var sheets = Object.keys(HEADERS);
+  var i = 0;
+  function next() {
+    if (i >= sheets.length) { cb(); return; }
+    var name = sheets[i++];
+    var rows = [HEADERS[name]];
+    if (name === 'Settings') {
+      rows.push(['allowed_domain',''], ['clinic_name','PediaLume Pediatric Therapy'], ['clinic_npi',''], ['clinic_tax_id',''], ['clinic_phone',''], ['clinic_address','']);
+    }
+    batchUpdate(name, rows, next);
+  }
+  next();
+}
+
+function ensureAllSheets(cb) {
+  // Get existing sheet names
+  sheetsRequest('GET', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'?fields=sheets.properties.title', null, function(r) {
+    var existing = (r.sheets||[]).map(function(s){ return s.properties.title; });
+    var needed = Object.values(SHEETS).filter(function(n){ return existing.indexOf(n)<0; });
+    if (needed.length === 0) { cb(); return; }
+    sheetsRequest('POST', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+':batchUpdate', {
+      requests: needed.map(function(n){ return { addSheet: { properties: { title: n } } }; })
+    }, function() {
+      // Write headers for new sheets
+      var i = 0;
+      function next() {
+        if (i >= needed.length) { cb(); return; }
+        var n = needed[i++];
+        batchUpdate(n, [HEADERS[n]], next);
+      }
+      next();
+    });
+  });
+}
+
+function ensureDriveFolder(cb) {
+  if (APP.folderId) { cb(APP.folderId); return; }
+  var saved = sessionStorage.getItem('pl_folderId');
+  if (saved) { APP.folderId = saved; cb(saved); return; }
+  driveRequest('GET', 'https://www.googleapis.com/drive/v3/files?q=name%3D%22'+encodeURIComponent(FOLDER_NAME)+'%22+and+mimeType%3D%22application/vnd.google-apps.folder%22+and+trashed%3Dfalse', null, function(r) {
+    if (r && r.files && r.files.length) {
+      APP.folderId = r.files[0].id;
+      sessionStorage.setItem('pl_folderId', APP.folderId);
+      cb(APP.folderId);
+    } else {
+      driveRequest('POST', 'https://www.googleapis.com/drive/v3/files', { name:FOLDER_NAME, mimeType:'application/vnd.google-apps.folder' }, function(f) {
+        APP.folderId = f.id;
+        sessionStorage.setItem('pl_folderId', APP.folderId);
+        cb(APP.folderId);
+      });
+    }
+  });
+}
+
+// ── SHEETS API HELPERS ────────────────────────────────────────────
+function sheetsRequest(method, url, body, cb) {
+  var opts = { method:method, headers:{ 'Authorization':'Bearer '+APP.token, 'Content-Type':'application/json' } };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  fetch(url, opts).then(function(r){ return r.json(); }).then(cb).catch(function(e){ console.error('Sheets error',e); cb({}); });
+}
+
+function driveRequest(method, url, body, cb) {
+  var opts = { method:method, headers:{ 'Authorization':'Bearer '+APP.token, 'Content-Type':'application/json' } };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  fetch(url, opts).then(function(r){ return r.json(); }).then(cb).catch(function(e){ console.error('Drive error',e); cb({}); });
+}
+
+function readSheet(sheetName, cb) {
+  sheetsRequest('GET', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'/values/'+encodeURIComponent(sheetName), null, function(r) {
+    var vals = r.values || [];
+    if (vals.length < 2) { cb([]); return; }
+    var headers = vals[0];
+    cb(vals.slice(1).map(function(row) {
+      var obj = {};
+      headers.forEach(function(h,i){ obj[h] = row[i] !== undefined ? row[i] : ''; });
+      return obj;
+    }));
+  });
+}
+
+function readSheetRaw(sheetName, cb) {
+  sheetsRequest('GET', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'/values/'+encodeURIComponent(sheetName), null, function(r) {
+    cb(r.values || []);
+  });
+}
+
+function appendRow(sheetName, values, cb) {
+  sheetsRequest('POST',
+    'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'/values/'+encodeURIComponent(sheetName)+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+    { values: [values] },
+    function(r){ if (cb) cb(r); }
+  );
+}
+
+function batchUpdate(sheetName, rows, cb) {
+  sheetsRequest('PUT',
+    'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'/values/'+encodeURIComponent(sheetName)+'?valueInputOption=RAW',
+    { values: rows },
+    function(r){ if (cb) cb(r); }
+  );
+}
+
+function updateRow(sheetName, rowIndex, values, cb) {
+  // rowIndex is 1-based (row 1 = header)
+  sheetsRequest('PUT',
+    'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'/values/'+encodeURIComponent(sheetName)+'!A'+(rowIndex+1)+'?valueInputOption=RAW',
+    { values: [values] },
+    function(r){ if (cb) cb(r); }
+  );
+}
+
+function deleteRow(sheetName, rowIndex, cb) {
+  // Need sheet ID for deleteRow — get it first
+  sheetsRequest('GET', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+'?fields=sheets.properties', null, function(r) {
+    var sheetId = null;
+    (r.sheets||[]).forEach(function(s){ if (s.properties.title===sheetName) sheetId=s.properties.sheetId; });
+    if (sheetId === null) { if(cb) cb(); return; }
+    sheetsRequest('POST', 'https://sheets.googleapis.com/v4/spreadsheets/'+APP.ssId+':batchUpdate', {
+      requests: [{ deleteDimension: { range: { sheetId:sheetId, dimension:'ROWS', startIndex:rowIndex, endIndex:rowIndex+1 } } }]
+    }, function(){ if(cb) cb(); });
+  });
+}
+
+function saveRecord(sheetName, headers, record, cb) {
+  // If no id, append. If id exists, find and update.
+  if (!record.id) {
+    record.id = sheetName.slice(0,3).toUpperCase() + '-' + Date.now();
+    var row = headers.map(function(h){ return record[h] !== undefined ? record[h] : ''; });
+    appendRow(sheetName, row, function(){ if(cb) cb({ok:true, id:record.id}); });
+  } else {
+    readSheetRaw(sheetName, function(vals) {
+      var hdr = vals[0] || headers;
+      for (var i=1; i<vals.length; i++) {
+        if (vals[i][0] == record.id) {
+          var row = hdr.map(function(h){ return record[h] !== undefined ? record[h] : ''; });
+          updateRow(sheetName, i, row, function(){ if(cb) cb({ok:true, id:record.id}); });
+          return;
+        }
+      }
+      // Not found — append
+      var row2 = hdr.map(function(h){ return record[h] !== undefined ? record[h] : ''; });
+      appendRow(sheetName, row2, function(){ if(cb) cb({ok:true, id:record.id}); });
+    });
+  }
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+function readSettings(cb) {
+  readSheetRaw(SHEETS.settings, function(vals) {
+    var obj = {};
+    (vals||[]).forEach(function(r){ if(r[0]) obj[r[0]] = r[1]||''; });
+    cb(obj);
+  });
+}
+
+function writeSetting(key, value, cb) {
+  readSheetRaw(SHEETS.settings, function(vals) {
+    for (var i=0; i<vals.length; i++) {
+      if (vals[i][0]===key) {
+        updateRow(SHEETS.settings, i, [key, value], cb);
+        return;
+      }
+    }
+    appendRow(SHEETS.settings, [key, value], cb);
+  });
+}
+
+// ── USER MANAGEMENT ───────────────────────────────────────────────
+function updateUserLastLogin(email) {
+  readSheetRaw(SHEETS.users, function(vals) {
+    for (var i=1; i<vals.length; i++) {
+      if (String(vals[i][0]).toLowerCase()===email.toLowerCase()) {
+        updateRow(SHEETS.users, i, [vals[i][0],vals[i][1],vals[i][2],vals[i][3],vals[i][4],new Date().toISOString(),vals[i][6]||'',vals[i][7]||''], function(){});
+        return;
+      }
+    }
+  });
+}
+
+function getUsers(cb) {
+  readSheetRaw(SHEETS.users, function(vals) {
+    if (!vals || vals.length<2) { cb([]); return; }
+    var headers = vals[0];
+    cb(vals.slice(1).map(function(r){
+      var o={};headers.forEach(function(h,i){o[h]=r[i]||'';});return o;
+    }));
+  });
+}
+
+function addUser(userData, cb) {
+  var email = (userData.email||'').toLowerCase().trim();
+  readSettings(function(settings) {
+    var domain = settings.allowed_domain || '';
+    if (domain && email.split('@')[1] !== domain) {
+      cb({ok:false, error:'Email must be from @'+domain+' domain.'}); return;
+    }
+    getUsers(function(users) {
+      if (users.find(function(u){ return String(u.email||'').toLowerCase()===email; })) {
+        cb({ok:false, error:email+' is already registered.'}); return;
+      }
+      var now = new Date().toISOString();
+      appendRow(SHEETS.users, [email, userData.displayName||email.split('@')[0], userData.role||'readonly', 'true', 'false', '', now, userData.notes||''], function() {
+        cb({ok:true});
+      });
+    });
+  });
+}
+
+function updateUser(userData, cb) {
+  var email = (userData.email||'').toLowerCase().trim();
+  var caller = APP.user.email.toLowerCase();
+  if (email===caller && userData.role!=='admin') { cb({ok:false,error:'You cannot change your own role.'}); return; }
+  readSheetRaw(SHEETS.users, function(vals) {
+    for (var i=1; i<vals.length; i++) {
+      if (String(vals[i][0]).toLowerCase()===email) {
+        if (String(vals[i][4])==='true' && userData.active===false) { cb({ok:false,error:'Cannot deactivate the owner.'}); return; }
+        var row = [vals[i][0], userData.displayName||vals[i][1], userData.role||vals[i][2], userData.active!==false?'true':'false', vals[i][4], vals[i][5]||'', vals[i][6]||'', userData.notes||vals[i][7]||''];
+        updateRow(SHEETS.users, i, row, function(){ cb({ok:true}); });
+        return;
+      }
+    }
+    cb({ok:false,error:'User not found.'});
+  });
+}
+
+function removeUser(email, cb) {
+  email = email.toLowerCase().trim();
+  if (email===APP.user.email.toLowerCase()) { cb({ok:false,error:'Cannot remove your own account.'}); return; }
+  readSheetRaw(SHEETS.users, function(vals) {
+    for (var i=1; i<vals.length; i++) {
+      if (String(vals[i][0]).toLowerCase()===email) {
+        if (String(vals[i][4])==='true') { cb({ok:false,error:'Cannot remove the owner.'}); return; }
+        deleteRow(SHEETS.users, i, function(){ cb({ok:true}); });
+        return;
+      }
+    }
+    cb({ok:false,error:'User not found.'});
+  });
+}
+
+// ── BOOT APP ─────────────────────────────────────────────────────
+function bootApp() {
+  document.getElementById('auth-screen').classList.add('hide');
+  document.getElementById('app').classList.add('show');
+
+  var initials = (APP.user.displayName||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  document.getElementById('sb-avatar').textContent  = initials;
+  document.getElementById('sb-name').textContent    = APP.user.displayName || APP.user.email;
+  document.getElementById('sb-email').textContent   = APP.user.email;
+  document.getElementById('sb-role').textContent    = APP.user.role || 'readonly';
+  document.getElementById('topbar-user').title      = APP.user.email;
+  document.getElementById('topbar-user').textContent = initials.charAt(0)||'👤';
+  document.getElementById('drive-chip').textContent  = 'Drive: connected';
+  document.getElementById('drive-chip').className    = 'drive-chip';
+
+  applyPermissions(APP.user.permissions, APP.user.role);
+
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('dash-sub').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('nm-date').value  = today;
+  document.getElementById('am-date').value  = today;
+  document.getElementById('bm-dos').value   = today;
+  document.getElementById('gm-date').value  = today;
+  document.getElementById('nm-therapist').value = APP.user.displayName || '';
+  document.getElementById('am-therapist').value = APP.user.displayName || '';
+
+  loadAllData();
+}
+
+function applyPermissions(perms, role) {
+  if (!perms) return;
+  if (!perms.manageUsers)  document.getElementById('users-nav-item').classList.add('hidden');
+  if (!perms.viewBilling)  document.querySelectorAll('.billing-nav').forEach(function(e){ e.classList.add('hidden'); });
+  if (!perms.editClinical) document.querySelectorAll('.edit-clinical').forEach(function(e){ e.disabled=true; e.title='Your role cannot edit clinical data'; });
+  if (!perms.editBilling)  document.querySelectorAll('.billing-edit').forEach(function(e){ e.disabled=true; });
+  if (!perms.editSettings) document.querySelectorAll('.admin-only').forEach(function(e){ e.disabled=true; });
+
+  if (perms.manageUsers) {
+    readSettings(function(s) {
+      var domain = s.allowed_domain || '';
+      var bar = document.getElementById('domain-info-bar');
+      if (domain) {
+        bar.innerHTML = '🔒 Domain lock active: only <strong>@'+domain+'</strong> accounts can access this app.';
+        bar.className = 'alert-bar alert-success';
+        document.getElementById('au-domain-hint').textContent = 'Must end with @'+domain;
+      } else {
+        bar.innerHTML = 'ℹ️ No domain restriction set — any Google account can sign in. Set one in <strong>Settings → Allowed Domain</strong>.';
+        bar.className = 'alert-bar alert-warning';
+      }
+      document.getElementById('set-domain').value = domain;
+    });
+  }
+}
+
+// ── LOAD ALL DATA ─────────────────────────────────────────────────
+function loadAllData() {
+  var today = new Date().toISOString().slice(0,10);
+
+  readSheet(SHEETS.patients, function(rows) {
+    APP.patients = rows;
+    renderPatients(rows);
+    renderDashPatients(rows.slice(0,5));
+    populateDropdowns(rows);
+    document.getElementById('pat-count').textContent = rows.filter(function(p){return p.status==='Active';}).length + ' active patients';
+    document.getElementById('ai-insight').textContent = 'Loaded ' + rows.length + ' patients from Drive.';
+    updateDashStats();
+  });
+
+  readSheet(SHEETS.notes, function(rows) {
+    APP.notes = rows.reverse();
+    renderNotes(APP.notes.slice(0,20));
+    renderDashPending(APP.notes.filter(function(n){return !n.signature;}));
+    document.getElementById('nb-notes').textContent  = APP.notes.filter(function(n){return !n.signature;}).length;
+    document.getElementById('dash-pending-count').textContent = APP.notes.filter(function(n){return !n.signature;}).length;
+    updateDashStats();
+  });
+
+  readSheet(SHEETS.appts, function(rows) {
+    APP.appts = rows.filter(function(a){ return a.date===today; });
+    renderSchedule(APP.appts);
+    renderDashSchedule(APP.appts);
+    document.getElementById('nb-appt').textContent = APP.appts.length;
+    updateDashStats();
+  });
+
+  readSheet(SHEETS.goals, function(rows) {
+    APP.goals = rows;
+    renderGoals(rows);
+  });
+
+  if (APP.user.permissions && APP.user.permissions.viewBilling) {
+    readSheet(SHEETS.billing, function(rows) {
+      APP.billing = rows.reverse();
+      renderBilling(APP.billing.slice(0,20));
+      updateBillingKPIs(APP.billing);
+    });
+  }
+
+  readSettings(function(s) {
+    document.getElementById('set-name').value      = s.clinic_name    || '';
+    document.getElementById('set-address').value   = s.clinic_address || '';
+    document.getElementById('set-phone').value     = s.clinic_phone   || '';
+    document.getElementById('set-email').value     = s.clinic_email   || '';
+    document.getElementById('set-therapist').value = s.primary_therapist || '';
+    document.getElementById('set-npi').value       = s.clinic_npi     || '';
+    document.getElementById('set-taxid').value     = s.clinic_tax_id  || '';
+    document.getElementById('set-domain').value    = s.allowed_domain || '';
+    if (s.primary_therapist) {
+      document.getElementById('nm-therapist').value = s.primary_therapist;
+      document.getElementById('am-therapist').value = s.primary_therapist;
+    }
+  });
+}
+
+function updateDashStats() {
+  document.getElementById('s-active').textContent  = APP.patients.filter(function(p){return p.status==='Active';}).length;
+  document.getElementById('s-appts').textContent   = APP.appts.length;
+  document.getElementById('s-pending').textContent = APP.notes.filter(function(n){return !n.signature;}).length;
+  var mtd = APP.billing.filter(function(b){return String(b.dateOfService||'').startsWith(new Date().toISOString().slice(0,7));}).reduce(function(s,b){return s+(parseFloat(b.fee)||0);},0);
+  document.getElementById('s-revenue').textContent = '$'+mtd.toLocaleString();
+}
+
+// ── USER MANAGEMENT PAGE ──────────────────────────────────────────
+function loadUsers() {
+  document.getElementById('users-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)"><div class="spinner" style="border-color:rgba(26,111,255,.2);border-top-color:var(--primary);margin:0 auto 10px;width:24px;height:24px"></div>Loading…</div>';
+  getUsers(function(users) {
+    APP.users = users;
+    document.getElementById('users-sub').textContent = users.length + ' registered user' + (users.length!==1?'s':'') + ' from your domain';
+    renderUsers(users);
+  });
+}
+
+function renderUsers(users) {
+  if (!users || !users.length) { document.getElementById('users-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No users yet.</div>'; return; }
+  var colors = ['#1a6fff','#00d4aa','#a855f7','#ff6b35','#10b981','#f59e0b'];
+  document.getElementById('users-list').innerHTML = users.map(function(u,i) {
+    var initials = (u.displayName||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var isActive = String(u.active)!=='false', isOwner = String(u.isOwner)==='true';
+    var lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never';
+    return '<div class="user-row-card '+(isActive?'':'user-inactive')+'">'
+      +'<div class="user-row-avatar" style="background:'+colors[i%colors.length]+'">'+initials+'</div>'
+      +'<div class="user-row-info">'
+      +'<div class="user-row-name">'+esc(u.displayName||'')+(isOwner?' <span style="font-size:10px;color:var(--warning)">👑 Owner</span>':'')+'</div>'
+      +'<div class="user-row-email">'+esc(u.email||'')+'</div>'
+      +'<div class="user-row-meta"><span class="role-badge role-'+(u.role||'readonly')+'">'+esc(u.role||'readonly')+'</span>'
+      +(isActive?'<span class="badge badge-green">Active</span>':'<span class="badge badge-red">Inactive</span>')
+      +'<span style="font-size:11px;color:var(--text-muted)">Last login: '+lastLogin+'</span>'
+      +(u.notes?'<span style="font-size:11px;color:var(--text-soft);font-style:italic">'+esc(u.notes)+'</span>':'')
+      +'</div></div>'
+      +'<button class="btn btn-outline btn-sm" onclick='openEditUser('+JSON.stringify({email:u.email,displayName:u.displayName,role:u.role,active:isActive,notes:u.notes||''}).replace(/'/g,"&#39;")+')'>✏️ Edit</button>'
+      +'</div>';
+  }).join('');
+}
+
+function openEditUser(u) {
+  document.getElementById('eu-email-hidden').value   = u.email;
+  document.getElementById('eu-email-display').value  = u.email;
+  document.getElementById('eu-name').value           = u.displayName || '';
+  document.getElementById('eu-role').value           = u.role || 'readonly';
+  document.getElementById('eu-active').value         = String(u.active);
+  document.getElementById('eu-notes').value          = u.notes || '';
+  openModal('edit-user-modal');
+}
+
+function submitAddUser() {
+  var btn=document.getElementById('btn-add-user');
+  var email=(document.getElementById('au-email').value||'').trim().toLowerCase();
+  var name=document.getElementById('au-name').value.trim();
+  var role=document.getElementById('au-role').value;
+  var notes=document.getElementById('au-notes').value.trim();
+  if(!email){showToast('⚠️ Email is required');return;}
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Adding…';
+  addUser({email:email,displayName:name,role:role,notes:notes},function(r){
+    btn.disabled=false;btn.innerHTML='Send Invite →';
+    if(r&&r.ok){closeModal('add-user-modal');showToast('✅ User added!');document.getElementById('au-email').value='';document.getElementById('au-name').value='';loadUsers();}
+    else showToast('❌ '+(r&&r.error||'Error'),4000);
+  });
+}
+
+function submitEditUser() {
+  var btn=document.getElementById('btn-edit-user');
+  var data={email:document.getElementById('eu-email-hidden').value,displayName:document.getElementById('eu-name').value.trim(),role:document.getElementById('eu-role').value,active:document.getElementById('eu-active').value==='true',notes:document.getElementById('eu-notes').value.trim()};
+  btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';
+  updateUser(data,function(r){
+    btn.disabled=false;btn.innerHTML='💾 Save Changes';
+    if(r&&r.ok){closeModal('edit-user-modal');showToast('✅ User updated!');loadUsers();}
+    else showToast('❌ '+(r&&r.error||'Error'),4000);
+  });
+}
+
+function confirmRemoveUser() {
+  var email=document.getElementById('eu-email-hidden').value;
+  if(!confirm('Remove '+email+' from PediaLume-EMR? They will lose access immediately.'))return;
+  removeUser(email,function(r){
+    if(r&&r.ok){closeModal('edit-user-modal');showToast('✅ User removed.');loadUsers();}
+    else showToast('❌ '+(r&&r.error||'Cannot remove'),4000);
+  });
+}
+
+// ── RENDER FUNCTIONS ──────────────────────────────────────────────
+var COLORS=['#3b82f6','#8b5cf6','#ec4899','#10b981','#f59e0b','#ef4444','#06b6d4'];
+function renderPatients(patients){var tbody=document.getElementById('pat-tbody');if(!patients||!patients.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No patients yet.</td></tr>';return;}tbody.innerHTML=patients.map(function(p,i){var init=((p.firstName||'?')[0]+(p.lastName||'?')[0]).toUpperCase();var svc=(p.services||'').split(',').map(function(s){var t=s.trim();if(!t)return'';var c=t==='ST'?'teal':t==='OT'?'purple':t==='PT'?'orange':'blue';return'<span class="badge badge-'+c+'">'+esc(t)+'</span>';}).join(' ');var status=p.status==='Active'?'<span class="badge badge-green">Active</span>':'<span class="badge badge-orange">'+esc(p.status||'')+'</span>';return'<tr><td><div class="patient-row"><div class="avatar" style="background:'+COLORS[i%COLORS.length]+'">'+init+'</div><div><div class="patient-name">'+esc((p.firstName||'')+' '+(p.lastName||''))+'</div><div class="patient-id">#'+esc(p.id||'')+'</div></div></div></td><td>'+esc(p.dob||'—')+'</td><td><span class="badge badge-blue">'+esc(p.diagnosis||'—')+'</span></td><td>'+svc+'</td><td>'+esc(p.insurance||'—')+'</td><td>'+status+'</td><td><button class="btn btn-sm btn-outline" onclick="viewChart(''+esc(p.id)+'')">Chart</button></td></tr>';}).join('');}
+function renderDashPatients(pts){var el=document.getElementById('dash-patients');if(!pts||!pts.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">No patients yet.</td></tr>';return;}el.innerHTML=pts.map(function(p,i){var init=((p.firstName||'?')[0]+(p.lastName||'?')[0]).toUpperCase();var svc=(p.services||'').split(',').map(function(s){var t=s.trim();if(!t)return'';var c=t==='ST'?'teal':t==='OT'?'purple':'orange';return'<span class="badge badge-'+c+'">'+esc(t)+'</span>';}).join(' ');return'<tr><td><div class="patient-row"><div class="avatar" style="background:'+COLORS[i%COLORS.length]+'">'+init+'</div><div><div class="patient-name">'+esc((p.firstName||'')+' '+(p.lastName||''))+'</div><div class="patient-id">#'+esc(p.id||'')+'</div></div></div></td><td>'+svc+'</td><td>'+esc(p.insurance||'—')+'</td><td>'+esc(p.dateAdded||'—')+'</td><td>'+(p.status==='Active'?'<span class="badge badge-green">Active</span>':'<span class="badge badge-orange">'+esc(p.status||'')+'</span>')+'</td><td><button class="btn btn-sm btn-outline" onclick="viewChart(''+esc(p.id)+'')">Chart</button></td></tr>';}).join('');}
+function renderNotes(notes){var el=document.getElementById('notes-tbody');if(!notes||!notes.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No notes yet.</td></tr>';return;}el.innerHTML=notes.map(function(n){var signed=n.signature?'<span class="badge badge-green">Signed</span>':'<span class="badge badge-orange">Pending</span>';var c=n.service&&n.service.indexOf('Speech')>=0?'teal':n.service&&n.service.indexOf('OT')>=0?'purple':'orange';return'<tr><td><strong>'+esc(n.patientName||'')+'</strong></td><td>'+esc(n.date||'')+'</td><td><span class="badge badge-'+c+'">'+(n.service||'').split(' ')[0]+'</span></td><td><code>'+esc(n.cptCode||'—')+'</code></td><td>'+signed+'</td><td>'+esc(n.therapist||'—')+'</td><td><button class="btn btn-sm btn-outline" onclick="signNote(''+esc(n.id||'')+'')">'+(!n.signature?'Sign':'View')+'</button></td></tr>';}).join('');}
+function renderDashSchedule(appts){var el=document.getElementById('dash-schedule');if(!appts||!appts.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-muted)">No appointments today.</div>';return;}var sc=function(s){return s&&s.indexOf('Speech')>=0?'st':s&&s.indexOf('OT')>=0?'ot':s&&s.indexOf('PT')>=0?'pt':'eval';};el.innerHTML=appts.slice(0,6).map(function(a){return'<div class="schedule-slot"><div class="slot-time">'+esc(a.startTime||'—')+'</div><div class="slot-block '+sc(a.service)+'"><div class="slot-patient">'+esc(a.patientName||'')+'</div><div class="slot-type">'+esc(a.service||'')+(a.type?' · '+a.type:'')+'</div></div></div>';}).join('');}
+function renderSchedule(appts){var el=document.getElementById('sched-tbody');if(!appts||!appts.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No appointments today.</td></tr>';return;}el.innerHTML=appts.map(function(a){var c=a.status==='Completed'?'badge-green':'badge-blue';return'<tr><td>'+esc(a.startTime||'')+(a.endTime?' – '+esc(a.endTime):'')+'</td><td><strong>'+esc(a.patientName||'')+'</strong></td><td>'+esc(a.service||'')+'</td><td>'+esc(a.type||'')+'</td><td>'+esc(a.therapist||'')+'</td><td><span class="badge '+c+'">'+esc(a.status||'Scheduled')+'</span></td><td><button class="btn btn-sm btn-outline" onclick="completeAppt(''+esc(a.id||'')+'')">Done</button></td></tr>';}).join('');}
+function renderGoals(goals){var el=document.getElementById('goals-tbody');if(!goals||!goals.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">No goals yet.</td></tr>';return;}el.innerHTML=goals.map(function(g){var p=parseInt(g.progress)||0;var c=g.service&&g.service.indexOf('Speech')>=0?'teal':g.service&&g.service.indexOf('OT')>=0?'purple':'orange';return'<tr><td>'+esc(g.patientName||'')+'</td><td style="max-width:200px;white-space:normal">'+esc(g.goalText||'')+'</td><td><span class="badge badge-'+c+'">'+(g.service||'').split(' ')[0]+'</span></td><td style="min-width:120px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1"><div class="progress-bar"><div class="progress-fill" style="width:'+p+'%;background:linear-gradient(90deg,#1a6fff,#00d4aa)"></div></div></div><span style="font-size:11px;font-weight:700;color:var(--primary)">'+p+'%</span></div></td><td>'+esc(g.target||'80')+'%</td><td><span class="badge badge-teal">'+esc(g.status||'Active')+'</span></td><td><button class="btn btn-sm btn-outline edit-clinical" onclick="updateGoal(''+esc(g.id||'')+'')">Update</button></td></tr>';}).join('');}
+function renderBilling(billing){var el=document.getElementById('billing-tbody');if(!billing||!billing.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px">No billing records yet.</td></tr>';return;}el.innerHTML=billing.map(function(b){var c=b.status==='Paid'?'badge-green':b.status==='Denied'?'badge-red':b.status==='Submitted'?'badge-blue':'badge-orange';return'<tr><td>'+esc(b.patientName||'')+'</td><td>'+esc(b.dateOfService||'')+'</td><td><code>'+esc(b.cptCode||'—')+'</code></td><td>$'+esc(String(b.fee||0))+'</td><td>'+esc(b.insurance||'')+'</td><td><span class="badge '+c+'">'+esc(b.status||'Pending')+'</span></td></tr>';}).join('');}
+function renderDashPending(notes){var el=document.getElementById('dash-pending');if(!notes||!notes.length){el.innerHTML='<div style="color:var(--success);font-size:13px;text-align:center;padding:10px">✅ All notes signed!</div>';return;}el.innerHTML=notes.slice(0,3).map(function(n){return'<div class="notif-item"><div class="notif-icon" style="background:#fef3c7">📋</div><div><div style="font-size:13px;font-weight:700">'+esc(n.patientName||'')+'</div><div style="font-size:11px;color:var(--text-muted)">'+esc(n.date||'')+'</div></div><button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="showPage('notes',null)">Sign</button></div>';}).join('');}
+function updateBillingKPIs(billing){var m=new Date().toISOString().slice(0,7);var mtd=billing.filter(function(b){return String(b.dateOfService).startsWith(m);}).reduce(function(s,b){return s+(parseFloat(b.fee)||0);},0);var ar=billing.filter(function(b){return b.status==='Pending'||b.status==='Submitted';}).reduce(function(s,b){return s+(parseFloat(b.fee)||0);},0);var deny=billing.filter(function(b){return b.status==='Denied';}).length;document.getElementById('kpi-mtd').textContent='$'+mtd.toLocaleString();document.getElementById('kpi-ar').textContent='$'+ar.toLocaleString();document.getElementById('kpi-deny').textContent=deny;}
+function populateDropdowns(patients){var opts='<option value="">Select…</option>'+patients.map(function(p){return'<option value="'+p.id+'">'+p.firstName+' '+p.lastName+'</option>';}).join('');['nm-patient','am-patient','gm-patient','bm-patient','qn-patient'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;});}
+
+// ── SUBMIT / SAVE ─────────────────────────────────────────────────
+var PAT_H=['id','firstName','lastName','dob','gender','diagnosis','services','insurance','insuranceId','guardianName','guardianPhone','guardianEmail','primaryTherapist','status','dateAdded','notes'];
+var NOTE_H=['id','patientId','patientName','date','therapist','service','noteType','content','cptCode','icdCode','duration','goalProgress','signature','signedAt','createdAt'];
+var APPT_H=['id','patientId','patientName','date','startTime','endTime','service','therapist','type','status','notes'];
+var GOAL_H=['id','patientId','patientName','goalText','service','targetDate','progress','status','baseline','target','lastUpdated','notes'];
+var BILL_H=['id','patientId','patientName','dateOfService','cptCode','icdCode','units','fee','insurance','status','claimId','paidAmount','notes','createdAt'];
+
+function submitPatient(){var btn=document.getElementById('btn-save-patient');var p={firstName:document.getElementById('np-fname').value.trim(),lastName:document.getElementById('np-lname').value.trim(),dob:document.getElementById('np-dob').value,gender:document.getElementById('np-gender').value,diagnosis:document.getElementById('np-dx').value.trim(),services:document.getElementById('np-svc').value.trim(),insurance:document.getElementById('np-ins').value,insuranceId:document.getElementById('np-insid').value.trim(),guardianName:document.getElementById('np-guardian').value.trim(),guardianPhone:document.getElementById('np-phone').value.trim(),guardianEmail:document.getElementById('np-email').value.trim(),primaryTherapist:APP.user.email,status:'Active',dateAdded:new Date().toISOString().slice(0,10)};if(!p.firstName||!p.lastName){showToast('⚠️ First and last name required');return;}btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';saveRecord(SHEETS.patients,PAT_H,p,function(r){btn.disabled=false;btn.innerHTML='💾 Save to Drive';if(r&&r.ok){closeModal('new-patient-modal');showToast('✅ Patient saved!');loadAllData();}else showToast('❌ Error saving',4000);});}
+function submitNote(){var btn=document.getElementById('btn-save-note');var sel=document.getElementById('nm-patient');var note={patientId:sel.value,patientName:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',date:document.getElementById('nm-date').value,service:document.getElementById('nm-svc').value,cptCode:document.getElementById('nm-cpt').value.trim(),icdCode:document.getElementById('nm-icd').value.trim(),duration:document.getElementById('nm-dur').value,content:document.getElementById('nm-content').value.trim(),goalProgress:document.getElementById('nm-goal').value,therapist:document.getElementById('nm-therapist').value.trim(),noteType:'Progress Note',createdAt:new Date().toISOString()};if(!note.patientId){showToast('⚠️ Select a patient');return;}if(!note.content){showToast('⚠️ Note content required');return;}btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';saveRecord(SHEETS.notes,NOTE_H,note,function(r){btn.disabled=false;btn.innerHTML='💾 Save to Drive';if(r&&r.ok){closeModal('note-modal');showToast('✅ Note saved!');loadAllData();}else showToast('❌ Error',4000);});}
+function saveQuickNote(){var content=document.getElementById('note-area').value.trim();if(!content){showToast('⚠️ Write or dictate a note first');return;}var sel=document.getElementById('qn-patient');var note={patientId:sel.value,patientName:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',content:content,date:new Date().toISOString().slice(0,10),service:'General',therapist:APP.user.displayName||'',noteType:'Quick Note',createdAt:new Date().toISOString()};saveRecord(SHEETS.notes,NOTE_H,note,function(r){if(r&&r.ok){showToast('✅ Note saved to Drive!');document.getElementById('note-area').value='';loadAllData();}else showToast('❌ Error',4000);});}
+function submitGoal(){var btn=document.getElementById('btn-save-goal');var sel=document.getElementById('gm-patient');var goal={patientId:sel.value,patientName:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',goalText:document.getElementById('gm-text').value.trim(),service:document.getElementById('gm-svc').value,baseline:document.getElementById('gm-base').value,target:document.getElementById('gm-target').value,progress:document.getElementById('gm-base').value,targetDate:document.getElementById('gm-date').value,status:'Active',lastUpdated:new Date().toISOString().slice(0,10)};if(!goal.patientId||!goal.goalText){showToast('⚠️ Patient and goal text required');return;}btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';saveRecord(SHEETS.goals,GOAL_H,goal,function(r){btn.disabled=false;btn.innerHTML='💾 Save to Drive';if(r&&r.ok){closeModal('goal-modal');showToast('✅ Goal saved!');loadAllData();}else showToast('❌ Error',4000);});}
+function submitAppt(){var btn=document.getElementById('btn-save-appt');var sel=document.getElementById('am-patient');var appt={patientId:sel.value,patientName:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',date:document.getElementById('am-date').value,startTime:document.getElementById('am-start').value,endTime:document.getElementById('am-end').value,service:document.getElementById('am-svc').value,type:document.getElementById('am-type').value,therapist:document.getElementById('am-therapist').value.trim(),status:'Scheduled'};if(!appt.patientId||!appt.date){showToast('⚠️ Patient and date required');return;}btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';saveRecord(SHEETS.appts,APPT_H,appt,function(r){btn.disabled=false;btn.innerHTML='💾 Save to Drive';if(r&&r.ok){closeModal('appt-modal');showToast('✅ Appointment saved!');loadAllData();}else showToast('❌ Error',4000);});}
+function submitBilling(){var btn=document.getElementById('btn-save-bill');var sel=document.getElementById('bm-patient');var record={patientId:sel.value,patientName:sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'',dateOfService:document.getElementById('bm-dos').value,cptCode:document.getElementById('bm-cpt').value.trim(),icdCode:document.getElementById('bm-icd').value.trim(),fee:document.getElementById('bm-fee').value,insurance:document.getElementById('bm-ins').value,status:'Pending',createdAt:new Date().toISOString().slice(0,10)};if(!record.patientId||!record.dateOfService){showToast('⚠️ Patient and date required');return;}btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Saving…';saveRecord(SHEETS.billing,BILL_H,record,function(r){btn.disabled=false;btn.innerHTML='💾 Save to Drive';if(r&&r.ok){closeModal('bill-modal');showToast('✅ Billing record saved!');loadAllData();}else showToast('❌ Error',4000);});}
+function saveSettingsForm(){var keys={clinic_name:'set-name',clinic_address:'set-address',clinic_phone:'set-phone',clinic_email:'set-email',primary_therapist:'set-therapist',clinic_npi:'set-npi',clinic_tax_id:'set-taxid',allowed_domain:'set-domain'};var pairs=Object.keys(keys);var i=0;function next(){if(i>=pairs.length){showToast('✅ Settings saved!');return;}var k=pairs[i++];writeSetting(k,document.getElementById(keys[k]).value,next);}next();}
+
+// ── ACTIONS ───────────────────────────────────────────────────────
+function signNote(id){var note=APP.notes.find(function(n){return n.id==id;});if(!note)return;if(note.signature){showToast('ℹ️ Already signed');return;}note.signature=APP.user.displayName||APP.user.email;note.signedAt=new Date().toISOString();saveRecord(SHEETS.notes,NOTE_H,note,function(r){if(r&&r.ok){showToast('✅ Note signed!');loadAllData();}});}
+function completeAppt(id){var a=APP.appts.find(function(x){return x.id==id;});if(!a)return;a.status='Completed';saveRecord(SHEETS.appts,APPT_H,a,function(r){if(r&&r.ok){showToast('✅ Done!');loadAllData();}});}
+function updateGoal(id){var g=APP.goals.find(function(x){return x.id==id;});if(!g)return;var pct=prompt('Current progress % (0–100):',g.progress||0);if(pct===null)return;g.progress=Math.min(100,Math.max(0,parseInt(pct)||0));if(g.progress>=parseInt(g.target||80))g.status='Achieved';g.lastUpdated=new Date().toISOString().slice(0,10);saveRecord(SHEETS.goals,GOAL_H,g,function(r){if(r&&r.ok){showToast('✅ Goal updated!');loadAllData();}});}
+function viewChart(id){var p=APP.patients.find(function(x){return x.id==id;});if(!p)return;alert('Patient: '+p.firstName+' '+p.lastName+'\nID: '+p.id+'\nDOB: '+p.dob+'\nDx: '+p.diagnosis+'\nServices: '+p.services+'\nGuardian: '+p.guardianName+' | '+p.guardianPhone);}
+function filterPatients(){var q=(document.getElementById('pat-search').value||'').toLowerCase();var svc=(document.getElementById('pat-filter-svc').value||'').toLowerCase();var ins=(document.getElementById('pat-filter-ins').value||'').toLowerCase();var f=APP.patients.filter(function(p){var nm=((p.firstName||'')+' '+(p.lastName||'')+' '+(p.id||'')).toLowerCase();return(!q||nm.indexOf(q)>=0)&&(!svc||(p.services||'').toLowerCase().indexOf(svc)>=0)&&(!ins||(p.insurance||'').toLowerCase().indexOf(ins)>=0);});renderPatients(f);}
+function exportPatients(){var rows=[['ID','First','Last','DOB','Diagnosis','Services','Insurance','Status']];APP.patients.forEach(function(p){rows.push([p.id,p.firstName,p.lastName,p.dob,p.diagnosis,p.services,p.insurance,p.status]);});var blob=new Blob([rows.map(function(r){return r.join(',');}).join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='PediaLume_Patients_'+new Date().toISOString().slice(0,10)+'.csv';a.click();showToast('📤 Exported CSV');}
+function doSearch(q){if(!q||q.length<2)return;var ql=q.toLowerCase();var f=APP.patients.filter(function(p){return((p.firstName||'')+' '+(p.lastName||'')+''+p.id).toLowerCase().indexOf(ql)>=0;});if(f.length){showPage('patients',null);renderPatients(f);}}
+
+// ── VOICE ─────────────────────────────────────────────────────────
+var recording=false;
+function toggleVoice(){recording=!recording;var btn=document.getElementById('voice-btn'),area=document.getElementById('note-area');if(recording){btn.textContent='⏹️ Stop';btn.style.background='linear-gradient(135deg,#dc2626,#b91c1c)';if('webkitSpeechRecognition'in window||'SpeechRecognition'in window){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;window._rec=new SR();window._rec.continuous=true;window._rec.interimResults=true;window._rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;area.value=t;};window._rec.start();}}else{btn.textContent='🎙️ Dictate';btn.style.background='';if(window._rec)window._rec.stop();}}
+
+// ── AI ────────────────────────────────────────────────────────────
+function aiGenerateNote(){var area=document.getElementById('note-area');area.value='⏳ Generating…';setTimeout(function(){area.value='S: Parent reports good compliance with HEP. Patient self-correcting target sounds spontaneously at home.\n\nO: 45-min individual ST session. /r/ initial position 84% accuracy (42/50). Medial /r/ phrase level 68% (34/50). Engaged and cooperative throughout.\n\nA: Excellent progress toward articulation goals. Initial /r/ short-term goal met. Advancing to conversational carryover.\n\nP: Continue ST 2×/wk. Introduce /r/ in conversational contexts. Update HEP.\n\nCPT: 92507 | Duration: 45 min | Provider: '+APP.user.displayName;},900);}
+function setAIPrompt(t){document.getElementById('ai-input').value=t;}
+function runAI(){var inp=document.getElementById('ai-input').value,resp=document.getElementById('ai-response');if(!inp.trim())return;resp.style.display='block';resp.textContent='⏳ Thinking…';setTimeout(function(){var l=inp.toLowerCase(),a;if(l.indexOf('soap')>=0||l.indexOf('note')>=0)a='📝 SOAP Note:\n\nS: Parent reports [patient] had a productive week using HEP materials.\n\nO: [X]-min individual [service]. [Skill]: [X]% accuracy. Self-correction noted × [X].\n\nA: [Steady progress] toward [goal]. Short-term goal [in progress].\n\nP: Continue [X]×/wk. Advance to [next level].\n\nCPT: [code] | Duration: [X] min';else if(l.indexOf('goal')>=0)a='🎯 Sample Goals:\n\n1. Patient will [skill] with ≥80% accuracy in 4/5 trials by [date].\n2. Patient will [function] with ≤2 verbal prompts by [date].\n3. Patient will generalize [skill] to natural context with ≥75% accuracy.';else if(l.indexOf('cpt')>=0||l.indexOf('code')>=0)a='💰 CPT Codes:\n\n92507 — ST Individual\n92508 — ST Group\n97530 — OT Therapeutic Activities\n97110 — PT Therapeutic Exercise\n90837 — BH 60-min therapy\n\nAdd modifier 95 for telehealth.';else a='🤖 I can help with:\n• SOAP note generation\n• Treatment goal writing\n• CPT/ICD-10 coding\n• HEP creation';resp.textContent=a;},800);}
+
+// ── NAV / MODALS / UTILS ──────────────────────────────────────────
+function showPage(id,el){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});var page=document.getElementById('page-'+id);if(page)page.classList.add('active');if(el)el.classList.add('active');var titles={dashboard:'Dashboard',schedule:'Schedule',patients:'Patient Registry',notes:'Progress Notes',treatment:'Treatment Plans',goals:'Goal Tracking',speech:'Speech Therapy',ot:'Occupational Therapy',pt:'Physical Therapy',billing:'Billing & RCM',analytics:'Analytics',users:'User Management',settings:'Settings'};document.getElementById('topbar-title').textContent=titles[id]||id;if(id==='users')loadUsers();window.scrollTo(0,0);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('.modal-overlay').forEach(function(o){o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});});
+function showToast(msg,dur){var old=document.querySelector('.toast');if(old)old.remove();var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},dur||2800);}
+function showAuthScreen(){document.getElementById('auth-screen').classList.remove('hide');document.getElementById('app').classList.remove('show');}
+function showAuthError(title,descHtml,type){var iconMap={error:'❌',warning:'⚠️',info:'ℹ️'};var iconClass={error:'',warning:'warning',info:'info'};document.getElementById('auth-login').style.display='none';document.getElementById('auth-signing').style.display='none';var body=document.getElementById('auth-body');body.style.display='block';body.innerHTML='<div class="auth-icon-wrap '+(iconClass[type]||'')+'">'+iconMap[type]+'</div><div class="auth-title">'+title+'</div><div class="auth-desc">'+descHtml+'</div><button class="btn-google" onclick="location.reload()" style="justify-content:center;margin-top:8px">🔄 Try Again</button>';}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
